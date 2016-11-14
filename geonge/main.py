@@ -192,7 +192,7 @@ def check_output_opened(output):
     is_open = True
     while is_open:
         try:
-            file_name = output+'xlsx'
+            file_name = output+'.xlsx'
             with open(file_name, 'a') as f:
                 f.write("")
                 is_open = False
@@ -210,7 +210,7 @@ def main(argv=None):
     else:
         path = "huiben.txt"
         
-    output = path[:-3]
+    output = path.split(".")[0]
     check_output_opened(output)
 
     encoding = detect_encoding(path)
@@ -225,21 +225,26 @@ def main(argv=None):
     # write to file
     try:
         # write the orders to xlsx file
-        file_name = output + 'xlsx'
+        file_name = output + '.xlsx'
         write_xlsx(orders_list, file_name, headers=TITLE_KEYS)
         print(u"export to %s." % file_name)
     except Exception as e:
         print(e)
         # write the orders to csv file
-        file_name = output + 'csv'
-        write_csv(orders_list, path[:-3]+'csv', encoding="gbk")
+        file_name = output + '.csv'
+        write_csv(orders_list, file_name, encoding="gbk")
         print(u"export to %s." % file_name)
 
 
 def wait():
-    import msvcrt as m
-    print("Press any key to continue...")
-    m.getch()
+    try:
+        import msvcrt as m
+        print("Press any key to continue...")
+        m.getch()
+    except Exception:
+        # have not msvcrt? may be in linux, not need pause to catch up output.
+        pass
+
 
 import sys
 if __name__ == "__main__":
