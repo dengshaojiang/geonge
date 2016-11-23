@@ -17,13 +17,22 @@
 
 import codecs
 import chardet
+import sys
 import time
+
+
+def to_unicode(string):
+    return string.decode('utf-8')
+
+
+_ = to_unicode
 
 # csv output elements
 TITLE = {"name": u"收件人", "tel": u"电话", "address": u"地址",
          "price": u"价格", "num": u"数量", "time": u"下单时间",
          "id": u"订单号", "remark": u"备注", "title": u"产品名称"}
-#TITLE_KEYS = ("name", "tel", "address", "price", "num", "time", "id", "remark", "title")
+# TITLE_KEYS = ("name", "tel", "address", "price", "num", "time",
+#               "id", "remark", "title")
 TITLE_KEYS = ("name", "tel", "address", "price", "num", 'title')
 
 CSV_ROW = ""
@@ -47,13 +56,10 @@ CONTACT = u"联系"
 PRODUCT_MODEL = u"型号"
 USELESS = (END, ORDER_DETAIL, CONTACT, PRODUCT_MODEL)
 
-_ = lambda x: x.decode('utf-8')
-
 
 def is_name_tel(order_line):
     name_tel = order_line.split(" ")
-    if len(name_tel) == 2 \
-        and is_tel(name_tel[1]):
+    if len(name_tel) == 2 and is_tel(name_tel[1]):
         return True
     return False
 
@@ -63,19 +69,21 @@ def is_address(order_line):
         return True
     return False
 
+
 def is_time(order_line):
     if order_line[:3] in TIME:
         return True
     return False
 
+
 def is_remark(order_line):
     if order_line[:2] in REMARK:
         return True
     return False
-    
+
+
 def is_tel(order_line):
-    if len(order_line) == 11 \
-        and order_line.isdigit():
+    if len(order_line) == 11 and order_line.isdigit():
         return True
     return False
 
@@ -94,7 +102,8 @@ def order_line_to_dict(order):
             order_dict["address"] = line
         elif is_time(line):
             array = line.split(" ")
-            order_dict["time"] = u"%s %s" % (array[0], array[1]) if "time" in TITLE_KEYS else u""
+            order_dict["time"] = u"%s %s" % (array[0], array[1]) \
+                if "time" in TITLE_KEYS else u""
             order_dict["id"] = array[2][4:]
             order_dict["num"] = array[3][1:-3]
             order_dict["price"] = array[4][3:-10]
@@ -114,15 +123,11 @@ def detect_encoding(path):
 
 
 def read_file(path, encoding):
-    if encoding in ('UTF-16BE', 'UTF-16LE'):
-        with codecs.open(path, 'r', encoding) as fp:
+    with codecs.open(path, 'rb', encoding) as fp:
             lines = fp.readlines()
-    else:
-        with open(path, 'rb') as fp:
-            lines = fp.readlines()
-            lines = [l.decode(encoding, 'ignore') for l in lines]
 
     return lines
+
 
 def strip_blank(string):
     clear_string = string.strip()
@@ -133,6 +138,7 @@ def strip_blank(string):
     clear_string = clear_string.strip(u'\u0000\ufeff')
     clear_string = clear_string.strip(u'\ufffe\u0000')
     return clear_string
+
 
 def parse_lines(lines):
     orders = []
@@ -169,9 +175,11 @@ def covert_encode(data, encode="utf-8"):
     return encode_data
 
 
-def write_csv(data, filename, title=None, encoding="gbk"):
+def write_csv(data, filename, encoding="gbk"):
     if not data:
-        raise Exception("Error: No data to write file! Check whether the huiben.txt correct.")
+        msg = "Error: No data to write file! " \
+              "Check whether the %s correct." % filename
+        raise Exception(msg)
 
     with open(filename, 'w') as outf:
         data_gbk = [covert_encode(row, encoding) for row in data]
@@ -205,15 +213,16 @@ def write_xlsx(data, filename='huiben.xlsx', headers=None):
             for col, k in enumerate(headers):
                 sheet1.write_string(row, col, tdata[k])
 
+
 def check_output_opened(output):
     is_open = True
+    file_name = output+'.xlsx'
     while is_open:
         try:
-            file_name = output+'.xlsx'
             with open(file_name, 'a') as f:
                 f.write("")
                 is_open = False
-        except IOError as e:
+        except IOError:
             is_open = True
             msg = "'%s' is Opened? close and retry" % file_name
             print(msg)
@@ -258,28 +267,23 @@ def wait():
         import msvcrt as m
         print("Press any key to continue...")
         m.getch()
-    except Exception:
+    except:
         # have not msvcrt? may be in linux, not need pause to catch up output.
-        pass
+        time.sleep(1)
 
 
-import sys
 if __name__ == "__main__":
     help = _("请将原始订单数据拷贝到huiben.txt文件里，\n"
-    "从订单时间那一行开始拷贝，按住shift不放，拷贝到最后的发货结束。\n"
-    "Enjoy it!\n"
-    "")
+             "从订单时间那一行开始拷贝，按住shift不放，拷贝到最后的发货结束。\n"
+             "Enjoy it!\n")
     print(help)
 
     print(_("正在导出订单，请稍后。。。\n"))
-    #time.sleep(1)
     try:
         main(sys.argv)
     except Exception as e:
         print(str(e))
-        #time.sleep(5)
     else:
         print(_("导出订单成功。"))
-        #time.sleep(5)
 
     wait()
