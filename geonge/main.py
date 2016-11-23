@@ -124,13 +124,22 @@ def read_file(path, encoding):
 
     return lines
 
+def strip_blank(string):
+    clear_string = string.strip()
+    # clear unicode BOM
+    clear_string = clear_string.strip(u'\ufffe')
+    clear_string = clear_string.strip(u'\ufeff')
+    clear_string = clear_string.strip(u'\xEF\xBB\xBF')
+    clear_string = clear_string.strip(u'\u0000\ufeff')
+    clear_string = clear_string.strip(u'\ufffe\u0000')
+    return clear_string
 
 def parse_lines(lines):
     orders = []
     order = []
     start = False
     for line in lines:
-        line = line.strip()
+        line = strip_blank(line)
         if line[:3] in TIME:
             start = True
         if start:
@@ -217,7 +226,7 @@ def main(argv=None):
         path = argv[1]
     else:
         path = "huiben.txt"
-        
+
     output = path.split(".")[0]
     check_output_opened(output)
 
